@@ -43,9 +43,9 @@ LOG_PATH = os.environ.get("LOG_PATH", "/tmp/run.jsonl")
 LOG_URL = f"{BASE_URL}/run.jsonl"
 TG_API = f"https://api.telegram.org/bot{BOT_TOKEN}"
 
-MAX_AGENT_STEPS = 10
-PY_TIMEOUT = 60  # seconds for one run_python call
-ANSWER_BUDGET = 210  # wall-clock seconds before we force a final answer
+MAX_AGENT_STEPS = 5
+PY_TIMEOUT = 15  # seconds for one run_python call
+ANSWER_BUDGET = 45# wall-clock seconds before we force a final answer
 
 _log_lock = threading.Lock()
 _histories: dict[int, list[dict]] = {}  # chat_id -> chat-completion messages
@@ -116,6 +116,9 @@ Rules:
 5. If the message does not specify a shape, reply {"answer": <your concise answer>, "log_url": "LOG_URL"}.
 6. If a mid-conversation message is only setup/context ("I will send data next"), still reply with {"answer": "ok", "log_url": "LOG_URL"} unless it asks something.
 7. Round numbers as instructed; if unspecified, give reasonable precision. Never add keys that were not asked for inside "answer".
+8.If a tool call fails or times out once, do not retry the same download again.Either use an alternative method or provide your best answer immediately.
+9.Never repeat the same tool call after it has already failed or timed out. If a download or computation fails once, choose a different approach or answer from reliable knowledge if permitted.
+10. Use the run_python tool only when it is necessary to compute the answer. For simple questions or well-known facts, do not call the tool.
 """
 
 
