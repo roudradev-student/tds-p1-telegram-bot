@@ -80,11 +80,20 @@ def run_python(code: str) -> str:
     t = threading.Thread(target=target, daemon=True)
     t.start()
     t.join(PY_TIMEOUT)
-    if t.is_alive():
-        return "ERROR: code timed out after %ss" % PY_TIMEOUT
-    text = out.getvalue()
-    return text[-8000:] if text else "(no output — use print())"
 
+    if t.is_alive():
+     return f"ERROR: code timed out after {PY_TIMEOUT}s"
+
+    text = out.getvalue().strip()
+
+    if text:
+      return text[-8000:]
+
+    return (
+      "The code executed successfully but produced no stdout. "
+      "Use print(...) to display the final result."
+
+    )
 
 TOOLS = [
     {
