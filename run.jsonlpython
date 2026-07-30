@@ -1,4 +1,0 @@
-{"event": "log_created", "ts": "2026-07-30T01:30:32.327696+00:00"}
-{"event": "startup", "base_url": "http://127.0.0.1:8000", "model": "gpt-4o-mini", "ts": "2026-07-30T01:30:32.329888+00:00"}
-{"event": "startup", "base_url": "http://127.0.0.1:8000", "model": "gpt-4o-mini", "ts": "2026-07-30T01:32:49.490116+00:00"}
-{"event": "startup", "base_url": "http://127.0.0.1:8000", "model": "gpt-4o-mini", "ts": "2026-07-30T01:36:14.268520+00:00"}
