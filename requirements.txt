@@ -6,3 +6,4 @@ pandas
 numpy
 beautifulsoup4
 openpyxl
+scikit-learn
