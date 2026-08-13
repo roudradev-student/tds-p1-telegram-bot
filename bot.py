@@ -43,7 +43,7 @@ LOG_PATH = os.environ.get("LOG_PATH", "/tmp/run.jsonl")
 LOG_URL = f"{BASE_URL}/run.jsonl"
 TG_API = f"https://api.telegram.org/bot{BOT_TOKEN}"
 
-MAX_AGENT_STEPS = 5
+MAX_AGENT_STEPS = 7
 PY_TIMEOUT = 15  # seconds for one run_python call
 ANSWER_BUDGET = 45# wall-clock seconds before we force a final answer
 
