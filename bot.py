@@ -265,13 +265,8 @@ def solve(chat_id: int, question: str) -> str:
         try:
             msg = chat_completion(messages, use_tools=not out_of_time)
         except Exception as e:
-            log_event(event="llm_error", chat_id=chat_id, error=str(e))
-            time.sleep(2)
-            try:
-                msg = chat_completion(messages, use_tools=True)
-            except Exception as e2:
-                log_event(event="llm_error_final", chat_id=chat_id, error=str(e2))
-                break
+            log_event(event="llm_error_final", chat_id=chat_id, error=str(e))
+            break
         tool_calls = msg.get("tool_calls")
         if tool_calls:
             messages.append(msg)
