@@ -156,22 +156,44 @@ Rules:
 
 
 # ---------------------------------------------------------------- llm
+import time
+import requests
+
 def chat_completion(messages, use_tools=True):
-    body = {"model": MODEL, "messages": messages, "temperature": 0}
+    body = {
+        "model": MODEL,
+        "messages": messages,
+        "temperature": 0,
+    }
     if use_tools:
         body["tools"] = TOOLS
-    r = requests.post(
-        f"{MODEL_BASE_URL}/chat/completions",
-        headers={
-            "Authorization": f"Bearer {AIPIPE_TOKEN}",
-            "Content-Type": "application/json",
-            "User-Agent": "Mozilla/5.0 (data-analyst-bot)",
-        },
-        json=body,
-        timeout=180,
-    )
-    r.raise_for_status()
-    return r.json()["choices"][0]["message"]
+
+    headers = {
+        "Authorization": f"Bearer {AIPIPE_TOKEN}",
+        "Content-Type": "application/json",
+        "User-Agent": "Mozilla/5.0 (data-analyst-bot)",
+    }
+
+    for attempt in range(3):
+        r = requests.post(
+            f"{MODEL_BASE_URL}/chat/completions",
+            headers=headers,
+            json=body,
+            timeout=180,
+        )
+
+        if r.status_code == 429:
+            retry_after = r.headers.get("Retry-After")
+            if retry_after:
+                time.sleep(float(retry_after))
+            else:
+                time.sleep(2 ** attempt)   # 1s, 2s, 4s
+            continue
+
+        r.raise_for_status()
+        return r.json()["choices"][0]["message"]
+
+    raise requests.HTTPError("429 Too Many Requests after retries")
 
 
 def extract_json(text: str):
