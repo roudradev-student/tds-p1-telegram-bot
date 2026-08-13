@@ -179,7 +179,7 @@ def chat_completion(messages, use_tools=True):
             f"{MODEL_BASE_URL}/chat/completions",
             headers=headers,
             json=body,
-            timeout=180,
+            timeout=30,
         )
 
         if r.status_code == 429:
