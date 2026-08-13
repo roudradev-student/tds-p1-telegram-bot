@@ -165,6 +165,7 @@ def chat_completion(messages, use_tools=True):
         "messages": messages,
         "temperature": 0,
     }
+
     if use_tools:
         body["tools"] = TOOLS
 
@@ -184,10 +185,19 @@ def chat_completion(messages, use_tools=True):
 
         if r.status_code == 429:
             retry_after = r.headers.get("Retry-After")
-            if retry_after:
-                time.sleep(float(retry_after))
-            else:
-                time.sleep(2 ** attempt)   # 1s, 2s, 4s
+
+            try:
+                wait = min(float(retry_after), 3) if retry_after else 1
+            except (TypeError, ValueError):
+                wait = 1
+
+            log_event(
+                event="rate_limit_retry",
+                attempt=attempt + 1,
+                wait=wait,
+            )
+
+            time.sleep(wait)
             continue
 
         r.raise_for_status()
