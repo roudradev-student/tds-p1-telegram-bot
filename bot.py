@@ -64,37 +64,40 @@ def log_event(**fields):
 # ---------------------------------------------------------------- tools
 def run_python(code: str) -> str:
     """Execute Python code, return captured stdout (or the error)."""
-    out = io.StringIO()
+    stdout = io.StringIO()
+    stderr = io.StringIO()
     result: dict = {}
 
     def target():
         env = {"__name__": "__main__"}
         try:
-            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(out):
+            with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
                 exec(code, env)
             result["ok"] = True
         except Exception:
             result["ok"] = False
-            out.write("\n" + traceback.format_exc(limit=4))
+            stderr.write("\n" + traceback.format_exc(limit=4))
 
     t = threading.Thread(target=target, daemon=True)
     t.start()
     t.join(PY_TIMEOUT)
 
     if t.is_alive():
-     return f"ERROR: code timed out after {PY_TIMEOUT}s"
+        return f"ERROR: code timed out after {PY_TIMEOUT}s"
 
-    text = out.getvalue().strip()
+    stdout_text = stdout.getvalue().strip()
+    stderr_text = stderr.getvalue().strip()
 
-    if text:
-      return text[-8000:]
+    if stdout_text:
+        return stdout_text[-8000:]
 
-    return (
-      "The code executed successfully but produced no stdout. "
-      "Use print(...) to display the final result."
+    if result.get("ok"):
+        return (
+            "The code executed successfully but produced no stdout. "
+            "Use print(...) to display the final result."
+        )
 
-    )
-
+    return stderr_text[-8000:]
 TOOLS = [
     {
         "type": "function",
@@ -129,6 +132,10 @@ Rules:
 9. Never repeat an identical failed tool call. If needed, inspect the data, use a different method or source, or answer from reliable knowledge when appropriate.
 10. Use the run_python tool only when it is necessary to compute the answer. For simple questions or well-known facts, do not call the tool.
 11. Before processing data returned by an API, inspect the response structure and data types. Do not assume timestamps are strings or that expected fields exist.
+12. When using the run_python tool, always print the final answer using print(). Never rely on the last expression being displayed.
+13. The tool output consists only of printed stdout and stderr. If nothing is printed, assume the result was not returned.
+14. After receiving tool output, extract the printed value and produce the required JSON. Do not call the same tool again if it succeeded.
+
 """
 
 
