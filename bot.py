@@ -184,6 +184,18 @@ def chat_completion(messages, use_tools=True):
         )
 
         if r.status_code == 429:
+            log_event(
+              event="rate_limit_headers",
+              retry_after=r.headers.get("Retry-After"),
+              remaining_requests=r.headers.get("x-ratelimit-remaining-requests"),
+              remaining_tokens=r.headers.get("x-ratelimit-remaining-tokens"),
+              limit_requests=r.headers.get("x-ratelimit-limit-requests"),
+              limit_tokens=r.headers.get("x-ratelimit-limit-tokens"),
+           )   
+            
+            
+            
+            
             retry_after = r.headers.get("Retry-After")
 
             try:
