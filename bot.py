@@ -133,67 +133,24 @@ Rules:
 
 
 
+
 # ---------------------------------------------------------------- llm
-import time
-import requests
-
 def chat_completion(messages, use_tools=True):
-    body = {
-        "model": MODEL,
-        "messages": messages,
-        "temperature": 0,
-    }
-
+    body = {"model": MODEL, "messages": messages, "temperature": 0}
     if use_tools:
         body["tools"] = TOOLS
-
-    headers = {
-        "Authorization": f"Bearer {AIPIPE_TOKEN}",
-        "Content-Type": "application/json",
-        "User-Agent": "Mozilla/5.0 (data-analyst-bot)",
-    }
-
-    for attempt in range(3):
-        r = requests.post(
-            f"{MODEL_BASE_URL}/chat/completions",
-            headers=headers,
-            json=body,
-            timeout=30,
-        )
-
-        if r.status_code == 429:
-            log_event(
-              event="rate_limit_headers",
-              retry_after=r.headers.get("Retry-After"),
-              remaining_requests=r.headers.get("x-ratelimit-remaining-requests"),
-              remaining_tokens=r.headers.get("x-ratelimit-remaining-tokens"),
-              limit_requests=r.headers.get("x-ratelimit-limit-requests"),
-              limit_tokens=r.headers.get("x-ratelimit-limit-tokens"),
-           )   
-            
-            
-            
-            
-            retry_after = r.headers.get("Retry-After")
-
-            try:
-                wait = min(float(retry_after), 3) if retry_after else 1
-            except (TypeError, ValueError):
-                wait = 1
-
-            log_event(
-                event="rate_limit_retry",
-                attempt=attempt + 1,
-                wait=wait,
-            )
-
-            time.sleep(wait)
-            continue
-
-        r.raise_for_status()
-        return r.json()["choices"][0]["message"]
-
-    raise requests.HTTPError("429 Too Many Requests after retries")
+    r = requests.post(
+        f"{MODEL_BASE_URL}/chat/completions",
+        headers={
+            "Authorization": f"Bearer {AIPIPE_TOKEN}",
+            "Content-Type": "application/json",
+            "User-Agent": "Mozilla/5.0 (data-analyst-bot)",
+        },
+        json=body,
+        timeout=180,
+    )
+    r.raise_for_status()
+    return r.json()["choices"][0]["message"]
 
 
 def extract_json(text: str):
@@ -255,8 +212,13 @@ def solve(chat_id: int, question: str) -> str:
         try:
             msg = chat_completion(messages, use_tools=not out_of_time)
         except Exception as e:
-            log_event(event="llm_error_final", chat_id=chat_id, error=str(e))
-            break
+            log_event(event="llm_error", chat_id=chat_id, error=str(e))
+            time.sleep(2)
+            try:
+                msg = chat_completion(messages, use_tools=True)
+            except Exception as e2:
+                log_event(event="llm_error_final", chat_id=chat_id, error=str(e2))
+                break
         tool_calls = msg.get("tool_calls")
         if tool_calls:
             messages.append(msg)
